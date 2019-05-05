@@ -1,4 +1,12 @@
 ---
+# -----------------------------------------------------------------------------------------------------
+# Install helm stable/consul 
+# Helm uiIngress,enabled did not work. So a separate ingress to expose the ui dashhboard externally
+#
+# - Author: Rajendra Adhikari
+# - Date: 05-05-2019
+# -----------------------------------------------------------------------------------------------------
+
 - name: push the consul yaml config files
   copy:
     src: "{{ item }}"
