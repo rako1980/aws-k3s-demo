@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------------------------------
-# Define a provider access and import your publick key
+# Define a provider access and import your public key
 # ---------------------------------------------------------------------------------------------------
 provider "aws" {
   access_key = "${var.access_key}"
@@ -111,12 +111,26 @@ resource "null_resource" "connection_ec2" {
     user = "ec2-user"
     private_key = "${file("~/.ssh/id_rsa")}"
   }
+ 
+  # -- Populate the ansible inventory with its public IP
+  provisioner "local-exec" {
+    command = "printf '[k3sdemo]\n${aws_eip.k3s-master-ip.public_ip}' > ./inventory/hosts"
+  }
+ 
+  # -- Fulfill some prereq for the new instance
   provisioner "remote-exec" {
     inline = [
       "sudo yum install python -y",
-      "sudo mkdir -p /etc/ansible/facts.d && sudo echo '[terraform]\n'`date` > /etc/ansible/facts.d/terraform",
     ]
   }
+
+  # -- Invoke the ansible playbook provision.yml - setup k3s single master/node environment
+  # -- and deploy consul helm chart
+  provisioner "local-exec" {
+    command = "ansible-playbook -i ./inventory/hosts -l ${aws_eip.k3s-master-ip.public_ip} provision.yml"
+  }
+
+
   depends_on = ["aws_eip.k3s-master-ip"]
 }
 
