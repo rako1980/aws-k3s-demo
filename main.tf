@@ -1,8 +1,12 @@
 # ---------------------------------------------------------------------------------------------------
-# Deploy an EC2 instance and then invoke a provisioner
+# Deploy an EC2 instance and then invoke a provisioner to execute ansible playbook
+# terraform: Infrastructure deployement 
+# -- network: 1 - vpc,subnet,gateway, routing table,  security group
+# -- instance: 1 ec2, 1 eip
+# -- provisioner: ansible-playbook (k3s and consul install)
 # ---------------------------------------------------------------------------------------------------
 
-# --------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 # Define a provider access and import your public key
 # ---------------------------------------------------------------------------------------------------
 provider "aws" {
@@ -17,8 +21,8 @@ resource "aws_key_pair" "deployer" {
 }
 
 # -----------------------------------------------------------------------------------------------------
-# Deploy an EC2 instance and invoke ansible 
-# ---------------------------------------------------------------------------------------------
+# Deploy an EC2 instance
+# -----------------------------------------------------------------------------------------------------
 resource "aws_instance" "k3s-master-node" {
   ami           = "${var.ami}"
   instance_type = "${var.instance_type}"
@@ -29,9 +33,9 @@ subnet_id = "${aws_subnet.k3s-subnet.id}"
 
 }
 
-# --------------------------------------------------------------------------------------------------------
-# Networking: Define the VPC, subnet, inetrnet gateway. routing table and elastic IP for the ec2 instance 
-# --------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
+# Networking: Define the VPC, subnet, internet gateway. routing table and eio for ec2 instance 
+# -----------------------------------------------------------------------------------------------------
 
 resource "aws_vpc" "signalpath" {
   cidr_block = "10.0.0.0/16"
@@ -72,9 +76,9 @@ resource "aws_eip" "k3s-master-ip" {
 }
 
 
-# -----------------------------------------------------------------------------------------------
-# Security groups: Alow all egress traffic, only allow ssh ingress traffic on the VPC
-# -------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
+# Security groups: Alow all egress traffic, only allow ssh,http(s) ingress traffic on the VPC
+# -----------------------------------------------------------------------------------------------------
 
 resource "aws_security_group" "k3s-sg" {
 
@@ -116,9 +120,9 @@ egress {
 
 }
 
-# ---------------------------------------------------------------------------------------------
-# Run provisioner:
-# ----------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
+# Run provisioner: pretasks and invoke ansible playbook for k3s and consul deployment
+# -----------------------------------------------------------------------------------------------------
 
 resource "null_resource" "connection_ec2" {
   connection {
@@ -135,6 +139,7 @@ resource "null_resource" "connection_ec2" {
   # -- Fulfill some prereq for the new instance
   provisioner "remote-exec" {
     inline = [
+      "sudo yum update -y",
       "sudo yum install python -y",
     ]
   }
