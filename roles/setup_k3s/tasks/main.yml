@@ -3,10 +3,26 @@
   shell: /usr/bin/curl -sfL https://get.k3s.io | sh -
   become: true
 
+- name: delay 60s
+  pause:
+    seconds: 60
+
+- name: restart the k3s instances unless successful ( unless successfull to address the bug )
+  service:
+    name: k3s.service
+    enabled: true
+    state: restarted
+  register: k3s_service_result
+  retries: 10
+  delay: 3
+  until: k3s_service_result is succeeded
+  become: true
+
 - name: wait for cluster availability
   shell: /usr/local/bin/kubectl get nodes | awk '{print $2}' | tail -1
   register: check_k3s
   retries: 5
+  delay: 3
   until: check_k3s.stdout == "Ready"
 
 - name: push the nfs-provisioner yaml config files
@@ -27,4 +43,5 @@
   shell: /usr/local/bin/kubectl get sc nfs | awk '{print $1}' | grep nfs 
   register: check_nfs
   retries: 5
+  delay: 5
   until: check_nfs.stdout == "nfs"
