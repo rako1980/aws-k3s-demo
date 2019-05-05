@@ -21,7 +21,7 @@
 - name: wait for cluster availability
   shell: /usr/local/bin/kubectl get nodes | awk '{print $2}' | tail -1
   register: check_k3s
-  retries: 5
+  retries: 10
   delay: 3
   until: check_k3s.stdout == "Ready"
 
@@ -42,6 +42,6 @@
 - name: check for nfs storage class availability
   shell: /usr/local/bin/kubectl get sc nfs | awk '{print $1}' | grep nfs 
   register: check_nfs
-  retries: 5
-  delay: 5
+  retries: 10
+  delay: 15
   until: check_nfs.stdout == "nfs"
