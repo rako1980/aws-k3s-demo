@@ -1,0 +1,11 @@
+apiVersion: k3s.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: consul
+  namespace: kube-system
+spec:
+  chart: stable/consul
+  targetNamespace: consul-cluster
+  valuesContent: |-
+    Replicas: 1
+

@@ -1,0 +1,30 @@
+---
+- name: Install k3s cluster from k3s.io script
+  shell: /usr/bin/curl -sfL https://get.k3s.io | sh -
+  become: true
+
+- name: wait for cluster availability
+  shell: /usr/local/bin/kubectl get nodes | awk '{print $2}' | tail -1
+  register: check_k3s
+  retries: 5
+  until: check_k3s.stdout == "Ready"
+
+- name: push the nfs-provisioner yaml config files
+  copy:
+    src: nfs-provisioner.yml
+    dest: .
+  become: true
+
+- name: create nfs-provisioner namespace
+  shell: /usr/local/bin/kubectl create ns nfs-provisioner
+  ignore_errors: true
+
+- name: apply the nfs-provisioer.yml config
+  shell: /usr/local/bin/kubectl -n kube-system create -f nfs-provisioner.yml
+  ignore_errors: true
+
+- name: check for nfs storage class availability
+  shell: /usr/local/bin/kubectl get sc nfs | awk '{print $1}' | grep nfs 
+  register: check_nfs
+  retries: 5
+  until: check_nfs.stdout == "nfs"

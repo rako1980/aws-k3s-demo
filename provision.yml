@@ -1,0 +1,9 @@
+---
+- hosts: all
+  gather_facts: true
+
+  pre_tasks:
+
+  tasks:
+
+

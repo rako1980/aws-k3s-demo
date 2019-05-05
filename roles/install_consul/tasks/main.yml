@@ -1,0 +1,28 @@
+---
+- name: push the consul yaml config files
+  copy:
+    src: "{{ item }}"
+    dest: .
+  with_items: 
+    - consul-helm.yml
+    - ingress.yml
+  become: true
+
+- name: check for nfs storage class availability
+  shell: /usr/local/bin/kubectl get sc nfs | awk '{print $1}' | grep nfs 
+  register: check_nfs
+  retries: 5
+  until: check_nfs.stdout == "nfs"
+
+- name: create consul namespace
+  shell: /usr/local/bin/kubectl create ns consul-cluster
+  ignore_errors: true
+
+- name: apply the consul-helm.yml
+  shell: /usr/local/bin/kubectl -n kube-system create -f consul-helm.yml
+  ignore_errors: true
+
+- name: apply ingress.yml 
+  shell: /usr/local/bin/kubectl -n consul-cluster create -f ingress.yml
+
+
