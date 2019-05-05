@@ -1,4 +1,12 @@
 ---
+# -----------------------------------------------------------------------------------------------------
+# Install k3s from url source script - https://get.k3s.io
+# helm stable/nfs-server-provisioner used as default dynamic provisoner  
+#
+# - Author: Rajendra Adhikari
+# - Date: 05-05-2019
+# -----------------------------------------------------------------------------------------------------
+
 - name: Install k3s cluster from k3s.io script
   shell: /usr/bin/curl -sfL https://get.k3s.io | sh -
   become: true

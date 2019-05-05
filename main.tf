@@ -4,6 +4,9 @@
 # -- network: 1 - vpc,subnet,gateway, routing table,  security group
 # -- instance: 1 ec2, 1 eip
 # -- provisioner: ansible-playbook (k3s and consul install)
+# 
+# - Author: Rajendra Adhikari
+# - Date: 05-05-2019
 # ---------------------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------------------
