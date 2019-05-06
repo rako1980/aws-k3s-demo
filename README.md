@@ -1,8 +1,8 @@
 # Prototype Consul running in k3s
-This project uses AWS resources to create AWS infrastructure using tarraform, and invokes ansible-playbook to install k3s single master/single node. A helm nfs-server-provisioner is deployed to provide a default storage class, the storage to be later claimed by consul deployed as helmchart. The end result of this installation will be a single node k3s cluster deployed in an EC2 instance on its own private VPC, and a consul cluster running in k3s is available in UI externally.
+This project uses AWS resources to create AWS infrastructure using tarraform, and invokes ansible-playbook to install k3s single master/single node. A helm nfs-server-provisioner is deployed to provide a default storage class, the storage to be later claimed by consul deployed from helmchart. The end result of this installation will be a single node k3s cluster deployed in an EC2 instance on its own private VPC, and a consul cluster running in k3s is available in UI externally.
 
 ### Prerequisites:
-It is assumed you have an access to your AWS console. So get ready your ACCESS_CODE and SECRET_KEY. The deployment script will import your public key to AWS key-pair. So get or generate your public key ready. Terraform and ansible installation is required.
+It is assumed you have an access to your AWS console. So get ready with your ACCESS_CODE and SECRET_KEY. The deployment script will import your public key to AWS key-pair. So get or generate your public key as well. Terraform and ansible installation is required before executing this terraform script.
 ``` 
 $ssh=keygen -t rsa -b 2048 
 (accept the default)
@@ -39,23 +39,25 @@ ip = x.x.x.x
 #### Consul UI url:
 Consul UI url can be accessed at http or https://[instance public ip address]/ui
 
+### Destroy the AWS resources
+```
+$terraform destroy -var access_key=$ACCESS_KEY -var secret_key=$SECRET_KEY -var ssh_rsa_pub="$PUBLIC_KEY"
+```
 
 ## Deployment explanation:
 ### variable.tf
-Defines all the aws infrastructe variables. By default it uses free tier rhel7 linux AMI and t2.micro instance.
+Defines all the aws infrastructure variables. By default it uses free tier rhel7 linux AMI and t2.micro instance in us-east-2 region.
 ### main.cf
-All major terraform resources are defined in this file. 
-aws_key_pair: This will create an aws key pair with your public key contents. 
-It will also deploy a new VPC with cidr block 10.0.0.0/16 rather than using the AWS default VPC. A new subnet, ineternet gateway, routing table is created for this VPC. An elastic IP address is reserved to be assigned to EC2 instance. An EC2 instance is created with public IP accessible from internet. A security group that allows port 22 (for ssh to the EC2 instance in case you would need to login to troubleshoot, and HTTP/S port 80 and 443 to access the consul UI.
+All major terraform resources are defined in this file. aws_key_pair will create an aws key pair with your public key contents. It will also deploy a new VPC with cidr block 10.0.0.0/16 rather than using AWS default VPC. A new subnet, internet gateway and routing table are created for this VPC. An elastic IP address is reserved to be assigned to EC2 instance. An EC2 instance is created with public IP accessible from internet. A security group that allows port 22 (for ssh to the EC2 instance in case you would need to login to troubleshooti), and HTTP/S port 80 and 443 to access the consul UI.
 
-After the EC2 instance is initialized, a local provisioner populates the inventory file at ./inventory/hosts, and invokes remote exec to patch the OS and install prerequisites of python so that the OS can be configured with ansible. Note the inventory hosts group_vars (./inventory/group_vars/all) that defines the user and ssh private key file to ssh into the server. Ansible uses ssh for a remote execution of the playbook. Finally an ansible playbook provision.yml is invoked that will setup k3s and deploy helmc chart for the consul.
+After the EC2 instance is initialized, a local provisioner populates the inventory file at ./inventory/hosts, and invokes remote exec to patch the OS and install prerequisites of python so that the OS can be configured with ansible. Note the inventory hosts group_vars (./inventory/group_vars/all) that defines the user and ssh private key file to ssh into the server. Ansible uses ssh for a remote execution of the playbook. Finally an ansible playbook provision.yml is invoked that will setup k3s and deploy consul cluster from a helm chart.
 
 ### Ansible provision.yml and roles/
 > roles/
 > - setup_k3s
 > - install_consul
  
-setup_k3s role installs k3s from the source script located at https://get.k3s.io in a single master/ single node configuration. An nfs provisioner helm chart is deployed to be used as a default dynamic provisioner. Note that k3s also provides thee local-path-provisioner yaml config to configure the local storage using host path. However, the consul helm chart requires a default dynamic provisioning which local hostpath is the case. So a separate stable/nfs-server-provisioner was deployed using the hekm chart. The k3s has inbuilt hemchart resource that came in handy for easy helmchart deployment.
+setup_k3s role installs k3s from the source script located at https://get.k3s.io in a single master/ single node configuration. An nfs provisioner helm chart is deployed to be used as a default dynamic provisioner. Note that k3s also provides a local-path-provisioner yaml config to configure the local storage using host path which is a separate deployment after bringing up k3s cluster. However, the consul helm chart requires a default dynamic provisioning which local hostpath is not the case. So a separate stable/nfs-server-provisioner was deployed using the hekm chart. The k3s has inbuilt hemchart resource that came in handy for easy helmchart deployment. For simplycisty the nfs-server-provisoner was left with default settings that uses emptyDir for the mount volume.
 ```
 apiVersion: k3s.cattle.io/v1
 kind: HelmChart
@@ -83,7 +85,7 @@ spec:
   valuesContent: |-
     Replicas: 1
 ```
-The delivery output for this prototype is to be able to access the consul UI externally. Note that the values.yml for the helm deploy are passed as a valueContent in this HelmChart yaml. However, I was not able to get ingress work with passing the ingress.enabled settings above. So a separate ingress was deployed that expose the consul UI service in port 80 and 443.
+The delivery output for this prototype is to be able to access the consul UI externally. Note that the values.yml for the helm deploy are passed as a valueContent in this HelmChart yaml. However, I was not able to get ingress work with passing the ingress.enabled settings above. So a separate ingress resource was deployed that expose the consul UI service in port 80 and 443.
 ```
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -106,8 +108,9 @@ This is just a POC deployment and not suitable for any production deployment. Fi
 - Use an external storage for statefulset pods. Currently in this demo, a nfs-server-provisioner was used with local storage. For the pods (consul nodes) to be reliable there need to be multiple k8s worker nodes, multiple master and etcd. You can use nfs-server-provisioner or other external storage like glusterfs.
 - Limit the resource usage of pods to maintain the health of kubernetes worker nodes.
 Have a CA signed certificate for the cluster than the one used default in this demo.
-- Start with implicit deny as a default network policy in the name space. Allow to communicate only on the specific ports
-- Use TLS connection in ingress with CA signed certificate so the API access to the consul are secure. Currently it uses the k3s cluster certificate example.com which fails verification on the client- Configure the consul cluster with anti-affinity rules so they are placed in separate nodes.
+- Start with implicit deny as a default network policy in the namespace. Allow to communicate only on the specific ports
+- Use TLS connection in ingress with CA signed certificate so the API access to the consul are secure. Currently it uses the k3s cluster certificate example.com which fails verification on the client
+- Configure the consul cluster with anti-affinity rules so they are placed in separate nodes.
 - Use kubernetes readiness probe to monitor the consul by using the http API Probe.
 - Use the TLS connection and CA signed certificate for HTTP API call to the consul, and limit the access with acl tokens.
 - Collect the consul health metrics, along with the k3s cluster health and use the tools like Prometheus and Datadog, and use the visualization tools like grafana to minitor and analyse these metrics. Based on these metrics horizontal auto scaling of pods can be conigured.
