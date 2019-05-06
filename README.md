@@ -51,8 +51,54 @@ It will also deploy a new VPC with cidr block 10.0.0.0/16 rather than using the 
 After the EC2 instance is initialized, a local provisioner populates the inventory file at ./inventory/hosts, and invokes remote exec to patch the OS and install prerq of python so that the OS can be configured with ansible. Note the inventory hosts group_vars (./inventory/group_vars/all) that defines the user and ssh private key file to ssh into the server. Ansible uses ssh for a remote execution of the playbook. Finally an ansible playbook provision.yml is invoked that will setup k3s and deploy helmc chart for the consul.
 
 ### Ansible provision.yml and roles/
-setup_k3s role installs k3s from the source script located at https://get.k3s.io in a single master/ single node configuration. An nfs provisioner helm chart is deployed to be used as a default dynamic provisioner. Note that k3s also provides the local-path-provisioner yaml config to configure the local storage using host path. However, the consul helm chart requires a default dynamic privisioning which local hostpath is the case. So a separate stable/nfs-server-provisioner was deployed using the hekm chart. The k3s has inbuilt hemchart resource that came in handy for easy helmchart deployment.
+> roles/
+> - setup_k3s
+> - install_consul
+ 
+setup_k3s role installs k3s from the source script located at https://get.k3s.io in a single master/ single node configuration. An nfs provisioner helm chart is deployed to be used as a default dynamic provisioner. Note that k3s also provides thee local-path-provisioner yaml config to configure the local storage using host path. However, the consul helm chart requires a default dynamic privisioning which local hostpath is the case. So a separate stable/nfs-server-provisioner was deployed using the hekm chart. The k3s has inbuilt hemchart resource that came in handy for easy helmchart deployment.
+```
+apiVersion: k3s.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: nfs
+  namespace: kube-system
+spec:
+  chart: stable/nfs-server-provisioner
+  targetNamespace: nfs-provisioner
+  valuesContent: |-
+    storageClass:
+      defaultClass: true
+```
+
 install_consul finally deploys the stable/consul helmchart. For this demo a single node consul is used due to rsource contraints. This is a very simple setup of consul. In production, consule is deployed with multiple nodes, preferrably a master and multiple agents. In that case you will need to provide appropriate helm values to create anti affinmity rules so the consul nodes run on muliple kubernetes nodes.
+```
+apiVersion: k3s.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: consul
+  namespace: kube-system
+spec:
+  chart: stable/consul
+  targetNamespace: consul-cluster
+  valuesContent: |-
+    Replicas: 1
+```
+The delivery output for this prototype is to be able to access the consul UI externally. Note that the values.yml for the heml deploy are passed as a valueContent in this HelmChart yaml. However, I was not able to get ingress work with passing the ingress.enabled settings above. So a separate ingress was deployed that expose the consule UO service in port 80 and 443.
+```
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ui
+spec:
+  rules:
+  - host:
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: consul-ui
+servicePort: 8500
+```
 
-
+## Considerations for Production deployment:
  
