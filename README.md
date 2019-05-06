@@ -1,5 +1,5 @@
 # Prototype Consul running in k3s
-This project uses AWS resources to create AWS infrastructure using tarraform, and invokes ansible-playbook to install k3s single master/single node. A helm nfs-server-provisioner is deployed to provide a default storage class, the storage to be later claimed by consul deployed from helmchart. The end result of this installation will be a single node k3s cluster deployed in an EC2 instance on its own private VPC, and a consul cluster running in k3s is available in UI externally.
+This project uses AWS resources to create AWS infrastructure using tarraform, and invokes ansible-playbook to install k3s in single master/single node mode. A helm nfs-server-provisioner is deployed to provide a default storage class, the storage to be later claimed by consul deployed from helmchart. The end result of this installation will be a single node k3s cluster deployed in an EC2 instance on its own private VPC, and a consul cluster running in k3s is available in UI externally.
 
 ### Prerequisites:
 It is assumed you have an access to your AWS console. So get ready with your ACCESS_CODE and SECRET_KEY. The deployment script will import your public key to AWS key-pair. So get or generate your public key as well. Terraform and ansible installation is required before executing this terraform script.
@@ -13,7 +13,7 @@ $yum install ansible
 ```
 
 ### Installation Steps:
-Clone this repo, change the variable.yml default values as needed, or you can also export the environment variable as below. You will need to install the terraform and ansible for this to work. After initializing terraform in the directory, when you apply the terraform the output will be displayed at last with your consul url to access.
+Clone this repo, change the variable.yml default values as needed, or you can also export the environment variable as below. You will need to install the terraform and ansible for this to work. After initializing terraform and running the terraform the output will be displayed at last with your consul url to access.
 ```  
 $git clone https://github.com/rako1980/signalpath.git
 ```
@@ -116,6 +116,6 @@ Have a CA signed certificate for the cluster than the one used default in this d
 - Configure the consul cluster with anti-affinity rules so they are placed in separate nodes.
 - Use kubernetes readiness probe to monitor the consul by using the http API Probe.
 - Use the TLS connection and CA signed certificate for HTTP API call to the consul, and limit the access with acl tokens.
-- Collect the consul health metrics, along with the k3s cluster health and use the tools like Prometheus and Datadog, and use the visualization tools like grafana to minitor and analyse these metrics. Based on these metrics horizontal auto scaling of pods can be conigured.
+- Collect the consul health metrics, along with the k3s cluster health and use the tools like Prometheus and Datadog, and use the visualization tools like grafana to monitor and analyse these metrics. Based on these metrics horizontal auto scaling of pods can be configured.
 
 
