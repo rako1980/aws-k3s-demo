@@ -6,33 +6,37 @@ It is assumed you have an access to your AWS console. So get ready your ACCESS_C
 ``` 
 $ssh=keygen -t rsa -b 2048 
 (accept the default)
-wget https://releases.hashicorp.com/terraform/0.11.13/terraform_0.11.13_linux_amd64.zip 
-unzip terraform_0.11.13_linux_amd64.zip
-cp terraform /usr/local/bin/.
-yum install ansible
+$wget https://releases.hashicorp.com/terraform/0.11.13/terraform_0.11.13_linux_amd64.zip 
+$unzip terraform_0.11.13_linux_amd64.zip
+$cp terraform /usr/local/bin/.
+$yum install ansible
 ```
 
 ### Installation Steps:
-git clone https://github.com/rako1980/signalpath.git
-
-export ACCESS_KEY=Your_AWS_Access_key
-export SECRET_KEY=You_AWS_Secret_Key
-export PUBLIC_KEY="public key from ~/.ssh/id_rsa.pub"
-cd signalpath
-terraform init
-terraform apply -var access_key=$ACCESS_KEY -var secret_key=$SECRET_KEY -var ssh_rsa_pub="$PUBLIC_KEY"
+Clone this repo, chnage the variable.yml default values as needed, or you can also export the environment variable as below. You will need to install the terraform and ansible for this to work. After initilizing terraform in the directory, when you apply the terraform the output will be displayed at last with your consul url to access.
+```  
+$git clone https://github.com/rako1980/signalpath.git
+```
+```
+$export ACCESS_KEY=Your_AWS_Access_key
+$export SECRET_KEY=You_AWS_Secret_Key
+$export PUBLIC_KEY="public key from ~/.ssh/id_rsa.pub"
+$cd signalpath
+$terraform init
+$terraform apply -var access_key=$ACCESS_KEY -var secret_key=$SECRET_KEY -var ssh_rsa_pub="$PUBLIC_KEY"
 ... (outout ommited) ...
   Enter a value: yes
 .. (output ommited)...
 Apply complete! Resources: 10 added, 0 changed, 0 destroyed.
-
+```
+```
 Outputs:
 
 info = UI url: http://x.x.x.x
 ip = x.x.x.x
+```
 
-
-Consul UI url:
+#### Consul UI url:
 Consul UI url can be accessed at http or https://[instance public ip address]/ui
 
 
