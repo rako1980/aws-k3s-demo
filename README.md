@@ -39,7 +39,7 @@ ip = x.x.x.x
 #### Consul UI url:
 Consul UI url can be accessed at http or https://[instance public ip address]/ui. Wait few minutes for consul pods to complete rollout before successfully accessing the url. If there is an issue you can ssh to ec2 instance:
 ```
-$sh ec2-user@[public ip address if ec2 instance]
+$ssh ec2-user@[public ip address if ec2 instance]
 ```
 
 ### Destroy the AWS resources
