@@ -104,18 +104,3 @@ spec:
           serviceName: consul-ui
 servicePort: 8500
 ```
-
-## Considerations for Production deployment:
-This is just a POC deployment and not suitable for any production deployment. First the k3s used here is "lightweight kuberenets", and on top of that this was deployed on a single k3s node as a master and agent running on a single ec2 micro instance. Several considerations are to be taken here to be securely and reliably deploy into production:
-- Use a separate kubernetes cluster (openshift or full kubernetes installation , or in cloud like AWS EKS, Google GKE etc). The fully fetaured cluster build that way will have robust security built in.
-- Use an external storage for statefulset pods. Currently in this demo, a nfs-server-provisioner was used with local storage. For the pods (consul nodes) to be reliable there need to be multiple k8s worker nodes, multiple master and etcd. You can use nfs-server-provisioner or other external storage like glusterfs.
-- Limit the resource usage of pods to maintain the health of kubernetes worker nodes.
-Have a CA signed certificate for the cluster than the one used default in this demo.
-- Start with implicit deny as a default network policy in the namespace. Allow to communicate only on the specific ports
-- Use TLS connection in ingress with CA signed certificate so the API access to the consul are secure. Currently it uses the k3s cluster certificate example.com which fails verification on the client
-- Configure the consul cluster with anti-affinity rules so they are placed in separate nodes.
-- Use kubernetes readiness probe to monitor the consul by using the http API Probe.
-- Use the TLS connection and CA signed certificate for HTTP API call to the consul, and limit the access with acl tokens.
-- Collect the consul health metrics, along with the k3s cluster health and use the tools like Prometheus and Datadog, and use the visualization tools like grafana to monitor and analyse these metrics. Based on these metrics horizontal auto scaling of pods can be configured.
-
-
