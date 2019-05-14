@@ -1,4 +1,4 @@
-## A simple API based containerized application (consul) runnin on kubernetes cluster (k3s) over an Amazon AWS EC2 instance
+## A simple API based containerized application (consul) running on kubernetes cluster (k3s) over an Amazon AWS EC2 instance
 The sole purpose of this project is to demo the DevOPS example involving AWS, Kubernetes (k3s) and deployment of an application (Consul) using Ansible. This will demonstrate and automation of EC2 instance rollout in Amazon AWS using terraform, subsequent deployment of k3s cluster using ansible and using kubernetes resources to deploy a simple single node consul cluster. This also explores the K3S helmchart controller there by deploying an nfs-server-provisioner from a helm chart and used as a default storage class to be consumed by application pods in the sample consul application. You can see all the deployment has been automated from creating an EC2 isntances to the point where you are ready to browse the consul web api call on publicly available URL.
 
 ### Prerequisites:
